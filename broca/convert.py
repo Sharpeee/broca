@@ -43,9 +43,9 @@ def to_session(server):
         "seedRatioLimited": False,
         "seed-queue-size": 0,
         "seed-queue-enabled": False,
-        "speed-limit-down": server["throttle_down"] or 0,
+        "speed-limit-down": int(server["throttle_down"] or 0),
         "speed-limit-down-enabled": server["throttle_down"] != None,
-        "speed-limit-up": server["throttle_up"] or 0,
+        "speed-limit-up": int(server["throttle_up"] or 0),
         "speed-limit-up-enabled": server["throttle_up"] != None,
         "start-added-torrents": False, # TODO: Make this actually work
         "trash-original-torrent-files": False,
@@ -62,7 +62,7 @@ def to_session(server):
     }
 
 def to_timestamp(synapse):
-    return iso8601.parse_date(synapse).timestamp()
+    return int(iso8601.parse_date(synapse).timestamp())
 
 next_id = 1
 transmission_ids = dict()
@@ -183,10 +183,10 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
         "downloadedEver": transferred_down,
         "downloadLimit": throttle_down if throttle_down not in [None, -1] else 0,
         "downloadLimited": throttle_down not in [None, -1],
-        "error": torrent["error"] is not None,
+        "error": 0,
         "errorString": torrent["error"] or "",
-        "eta": (size * (1 - progress)) * torrent["rate_up"],
-        "etaIdle": (size * (1 - progress)) * torrent["rate_up"],
+        "eta": int((size * (1 - progress)) * torrent["rate_up"]),
+        "etaIdle": int((size * (1 - progress)) * torrent["rate_up"]),
         "files": [to_file(f) for f in files],
         "fileStats": [to_filestat(f) for f in files],
         "hashString": torrent["id"],
@@ -262,6 +262,8 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
     for key in fields:
         if key in t:
             _t[key] = t[key]
+        else:
+            print(f"Warning: client requested unknown key {key}")
     return _t
 
 def from_torrent(torrent):

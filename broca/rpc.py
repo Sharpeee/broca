@@ -7,15 +7,11 @@ import base64
 import broca.convert as convert
 import json
 
-def response(_json, result="success", tag=None):
+def response(_json, result="success"):
     response = dict()
     response.update(_json)
     response.update({ "result": result })
-    if tag:
-        response.update({ "tag": tag })
-    return web.Response(
-            text=json.dumps(response),
-            content_type="application/json")
+    return response
 
 async def session_get(ws, **args):
     server = (await ws.get_resources_by_kind("server"))[0]
@@ -72,7 +68,7 @@ async def torrent_get(ws, **args):
     peers = (await ws.get_resources_by_kind("peer"))
     trackers = (await ws.get_resources_by_kind("tracker"))
     torrents = sorted(torrents, key=lambda t: t.get("name"))
-    return response({
+    resp = {
         "arguments": {
             "torrents": [convert.to_torrent(
                 torrent,
@@ -82,7 +78,10 @@ async def torrent_get(ws, **args):
                 [t for t in trackers if t["torrent_id"] == torrent["id"]]
             ) for torrent in torrents]
         }
-    })
+    }
+    if args.get("ids") == "recently-active":
+        resp["arguments"]["removed"] = []
+    return response(resp)
 
 async def torrent_remove(ws, **args):
     ids = [convert.get_synapse_id(i) for i in args["ids"]]
@@ -120,7 +119,16 @@ async def torrent_stop(ws, **args):
     return response({})
 
 async def handle(request):
-    json = await request.json()
+    req = await request.json()
+    print("<-", req)
+    if not request.headers.get("Authorization"):
+        return web.Response(status=401, headers={
+            "WWW-Authenticate": 'Basic realm="User Visible Realm" charset="UTF-8"'
+        }, text="Expected authorization")
+    if not request.headers.get("X-Transmission-Session-Id"):
+        return web.Response(status=409, headers={
+            "X-Transmission-Session-Id": "TODO implement this right"
+        }, text="Expected session ID")
     ws = await get_socket(request.headers.get("Authorization"))
     if not ws:
         return web.Response(status=401,
@@ -137,10 +145,17 @@ async def handle(request):
         "torrent-stop": torrent_stop,
         #"torrent-verify": torrent_verify # TODO Luminarys
     }
-    handler = handlers.get(json["method"])
+    handler = handlers.get(req["method"])
     if not handler:
         return response({}, result="Unknown method")
-    return await handler(ws, **(json.get("arguments") or {}))
+    resp = await handler(ws, **(req.get("arguments") or {}))
+    tag = req.get("tag")
+    if tag is not None:
+        resp["tag"] = tag
+    print("->", json.dumps(resp))
+    return web.Response(
+            text=json.dumps(resp),
+            content_type="application/json")
 
 app = web.Application()
 app.router.add_post("/transmission/rpc", handle)
