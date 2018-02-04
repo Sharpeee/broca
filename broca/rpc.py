@@ -130,10 +130,6 @@ async def handle(request):
         return web.Response(status=401, headers={
             "WWW-Authenticate": 'Basic realm="User Visible Realm" charset="UTF-8"'
         }, text="Expected authorization")
-    if not request.headers.get("X-Transmission-Session-Id"):
-        return web.Response(status=409, headers={
-            "X-Transmission-Session-Id": "TODO implement this right"
-        }, text="Expected session ID")
     ws = await get_socket(request.headers.get("Authorization"))
     if not ws:
         return web.Response(status=401,
