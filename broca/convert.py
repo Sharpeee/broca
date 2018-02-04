@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 import iso8601
 
 def to_session(server):
@@ -57,7 +58,7 @@ def to_session(server):
             "memory-bytes": 1024,
         },
         "utp-enabled": False,
-        "version": "2.93 (synapse)"
+        "version": f"2.93 (Synapse {server['id']})"
     }
 
 def to_timestamp(synapse):
@@ -73,7 +74,89 @@ def get_id(infohash):
         next_id += 1
     return id
 
-def to_torrent(torrent, fields):
+def to_file(f):
+    return {
+        "bytesCompleted": int(f["size"] * f["progress"]),
+        "length": f["size"],
+        "name": f["path"],
+    }
+
+def to_priority(p):
+    return {
+        1: -1,
+        2: -1,
+        3: 0,
+        4: 1,
+        5: 1,
+    }[p]
+
+def to_filestat(f):
+    return {
+        "bytesCompleted": int(f["size"] * f["progress"]),
+        "wanted": True,
+        "priority": to_priority(f["priority"]),
+    }
+
+def to_peer(p):
+    return {
+        "address": p["id"],
+        "clientName": p["client_id"],
+        "clientIsChoked": False,
+        "clientIsInterested": False,
+        "flagStr": "", # TODO: wtf is this
+        "isDownloadingFrom": p["rate_down"] != 0,
+        "isEncrypted": False,
+        "isIncoming": False,
+        "isUploadingTo": p["rate_up"] != 0,
+        "isUTP": False,
+        "peerIsChoked": False,
+        "peerIsInterested": False,
+        "port": 12345,
+        "progress": p["availability"],
+        "rateToClient": p["rate_down"],
+        "rateToPeer": p["rate_up"]
+    }
+
+def to_tracker(t):
+    return {
+        "announce": t["url"],
+        "id": get_id(t["id"]),
+        "scrape": "",
+        "tier": 1, # TODO Luminarys
+    }
+
+def to_trackerstat(t):
+    announce = urlparse(t["url"])
+    return {
+        "announce": t["url"],
+        "announceState": 0,
+        "downloadCount": 0,
+        "hasAnnounced": True,
+        "hasScraped": True,
+        "host": announce.netloc,
+        "id": get_id(t["id"]),
+        "isBackup": False,
+        "lastAnnouncePeerCount": 0,
+        "lastAnnounceResult": "",
+        "lastAnnounceStartTime": to_timestamp(t["last_report"]),
+        "lastAnnounceSucceeded": t["error"] is None,
+        "lastAnnounceTime": to_timestamp(t["last_report"]),
+        "lastAnnounceTimedOut": t["error"] is None,
+        "lastScrapeResult": "",
+        "lastScrapeStartTime": 0,
+        "lastScrapeSucceeded": True,
+        "lastScrapeTime": 0,
+        "lastScrapeTimedOut": False,
+        "leecherCount": 0, # TODO Luminarys
+        "nextAnnounceTime": 0,
+        "nextScrapeTime": 0,
+        "scrape": "",
+        "scrapeState": 0,
+        "seederCount": 0, # TODO Luminarys
+        "tier": 1,
+    }
+
+def to_torrent(torrent, fields, files, peers, trackers):
     size = torrent["size"] or 0
     throttle_down = torrent["throttle_down"]
     throttle_up = torrent["throttle_up"]
@@ -83,8 +166,8 @@ def to_torrent(torrent, fields):
     t = {
         "activityDate": 0,
         "addedDate": 0,
-        "bandwidthPriority": 0,
-        "comment": "TODO", # TODO Luminarys
+        "bandwidthPriority": to_priority(torrent["priority"]),
+        "comment": "broca TODO: fill out comment", # TODO Luminarys
         "corruptEver": 0,
         "creator": "TODO", # TODO Luminarys
         "dateCreated": to_timestamp(torrent["created"]),
@@ -98,8 +181,8 @@ def to_torrent(torrent, fields):
         "errorString": torrent["error"] or "",
         "eta": 0, # TODO
         "etaIdle": 0,
-        "files": [], # TODO
-        "fileStats": [], # TODO
+        "files": [to_file(f) for f in files],
+        "fileStats": [to_filestat(f) for f in files],
         "hashString": torrent["id"],
         "haveUnchecked": 0,
         "haveValid": int(size * progress),
@@ -115,8 +198,8 @@ def to_torrent(torrent, fields):
         "metadataPercentComplete": progress if torrent["status"] == "magnet" else 1,
         "name": torrent["name"],
         "peer-limit": 0,
-        "peers": [], # TODO
-        "peersConnected": 0, # TODO
+        "peers": [to_peer(p) for p in peers],
+        "peersConnected": len(peers),
         "peersFrom": { # TODO Luminarys
             "fromCache": 0,
             "fromDht": 0,
@@ -132,7 +215,7 @@ def to_torrent(torrent, fields):
         "pieces": "",
         "pieceCount": torrent["pieces"] or 0,
         "pieceSize": torrent["piece_size"] or 0,
-        "priorities": [],
+        "priorities": [to_priority(f["priority"]) for f in files],
         "queuePosition": 0,
         "rateDownload": torrent["rate_down"],
         "rateUpload": torrent["rate_up"],
@@ -155,8 +238,8 @@ def to_torrent(torrent, fields):
             "magnet": 4,
             "error": 0,
         }[torrent["status"]],
-        "trackers": [],
-        "trackerStats": [],
+        "trackers": [to_tracker(t) for t in trackers],
+        "trackerStats": [to_trackerstat(t) for t in trackers],
         "totalSize": size * progress,
         "torrentFile": "",
         "uploadedEver": transferred_up,

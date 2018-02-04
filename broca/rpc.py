@@ -27,12 +27,18 @@ async def torrent_get(ws, **args):
         pass
     fields = args.get("fields")
     torrents = (await ws.get_resources("torrent"))
-    # TODO: Get files
-    # TODO: Get peers
-    # TODO: Get trackers
+    files = (await ws.get_resources("file"))
+    peers = (await ws.get_resources("peer"))
+    trackers = (await ws.get_resources("tracker"))
     return response({
         "arguments": {
-            "torrents": [convert.to_torrent(t, fields) for t in torrents]
+            "torrents": [convert.to_torrent(
+                torrent,
+                fields,
+                [f for f in files if f["torrent_id"] == torrent["id"]],
+                [p for p in peers if p["torrent_id"] == torrent["id"]],
+                [t for t in trackers if t["torrent_id"] == torrent["id"]]
+            ) for torrent in torrents]
         }
     })
 
