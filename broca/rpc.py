@@ -148,8 +148,9 @@ async def handle(request):
     }
     handler = handlers.get(req["method"])
     if not handler:
-        return response({}, result="Unknown method")
-    resp = await handler(ws, **(req.get("arguments") or {}))
+        resp = response({}, result=f"Unknown method {req['method']}")
+    else:
+        resp = await handler(ws, **(req.get("arguments") or {}))
     tag = req.get("tag")
     if tag is not None:
         resp["tag"] = tag
