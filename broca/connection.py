@@ -26,8 +26,10 @@ class Connection():
         })
         async for resources in self.expect(1, serial=serial):
             break
-        # TODO: Unsubscribe
-        # https://github.com/Luminarys/synapse/issues/62
+        await self.send({
+            "type": "FILTER_UNSUBSCRIBE",
+            "filter_serial": serial
+        })
         return resources
 
     async def get_resources_by_kind(self, kind):

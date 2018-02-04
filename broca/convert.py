@@ -172,6 +172,7 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
     t = {
         "activityDate": to_timestamp(torrent["modified"]),
         "addedDate": to_timestamp(torrent["created"]),
+        "announceUrl": trackers[0]["url"] if trackers else "",
         "bandwidthPriority": to_priority(torrent["priority"]),
         "comment": "broca TODO: fill out comment", # TODO Luminarys
         "corruptEver": 0,
