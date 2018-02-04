@@ -26,6 +26,8 @@ class Connection():
         })
         async for resources in self.expect(1, serial=serial):
             break
+        # TODO: Unsubscribe
+        # https://github.com/Luminarys/synapse/issues/62
         return resources
 
     async def get_resources_by_kind(self, kind):
@@ -37,7 +39,7 @@ class Connection():
             "type": "GET_RESOURCES",
             "ids": ids
         })
-        async for update in self.expect(1, type="UPDATE_RESOURCES"):
+        async for update in self.expect(1, type="UPDATE_RESOURCES", ids=ids):
             break
         return update["resources"]
 
@@ -62,9 +64,16 @@ class Connection():
         msg = json.loads(await self.ws.recv())
         for _kwargs in list(self.futures.keys()):
             kwargs = json.loads(_kwargs)
+            passed = True
             for k in kwargs:
-                if not k in msg or k in msg and msg[k] != kwargs[k]:
-                    continue
+                if k == "ids" and msg["type"] == "UPDATE_RESOURCES":
+                    if not all(r["id"] in kwargs[k] for r in msg["resources"]):
+                        passed = False
+                        break
+                elif not k in msg or k in msg and msg[k] != kwargs[k]:
+                    passed = False
+                    break
+            if passed:
                 self.futures[_kwargs].set_result(msg)
                 del self.futures[_kwargs]
 

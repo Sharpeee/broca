@@ -65,14 +65,19 @@ def to_timestamp(synapse):
     return iso8601.parse_date(synapse).timestamp()
 
 next_id = 1
-id_map = dict()
-def get_id(infohash):
+transmission_ids = dict()
+synapse_ids = dict()
+def get_transmission_id(infohash):
     global next_id
-    id = id_map.get(infohash)
+    id = transmission_ids.get(infohash)
     if not id:
-        id = id_map[infohash] = next_id
+        id = transmission_ids[infohash] = next_id
+        synapse_ids[id] = infohash
         next_id += 1
     return id
+
+def get_synapse_id(id):
+    return synapse_ids.get(id)
 
 def to_file(f):
     return {
@@ -120,7 +125,7 @@ def to_peer(p):
 def to_tracker(t):
     return {
         "announce": t["url"],
-        "id": get_id(t["id"]),
+        "id": get_transmission_id(t["id"]),
         "scrape": "",
         "tier": 1, # TODO Luminarys
     }
@@ -134,7 +139,7 @@ def to_trackerstat(t):
         "hasAnnounced": True,
         "hasScraped": True,
         "host": announce.netloc,
-        "id": get_id(t["id"]),
+        "id": get_transmission_id(t["id"]),
         "isBackup": False,
         "lastAnnouncePeerCount": 0,
         "lastAnnounceResult": "",
@@ -158,11 +163,11 @@ def to_trackerstat(t):
 
 def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
     size = torrent.get("size") or 0
-    throttle_down = torrent["throttle_down"]
-    throttle_up = torrent["throttle_up"]
-    transferred_down = torrent["transferred_down"]
-    transferred_up = torrent["transferred_up"]
-    progress = torrent["progress"]
+    throttle_down = torrent.get("throttle_down") or 0
+    throttle_up = torrent.get("throttle_up") or 0
+    transferred_down = torrent.get("transferred_down") or 0
+    transferred_up = torrent.get("transferred_up") or 0
+    progress = torrent.get("progress") or 0
     # We want these consistently sorted
     files = sorted(files, key=lambda f: f.get("path"))
     peers = sorted(peers, key=lambda p: p.get("id"))
@@ -191,7 +196,7 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
         "haveUnchecked": 0,
         "haveValid": int(size * progress),
         "honorsSessionLimits": throttle_up is not None and throttle_down is not None,
-        "id": get_id(torrent["id"]),
+        "id": get_transmission_id(torrent["id"]),
         "isFinished": progress == 1,
         "isPrivate": False, # TODO Luminarys
         "isStalled": False,

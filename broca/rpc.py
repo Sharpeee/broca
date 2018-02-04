@@ -84,6 +84,16 @@ async def torrent_get(ws, **args):
         }
     })
 
+async def torrent_remove(ws, **args):
+    ids = [convert.get_synapse_id(i) for i in args["ids"]]
+    for torrent in ids:
+        await ws.send({
+            "type": "REMOVE_RESOURCE",
+            "id": torrent,
+            "artifacts": bool(args.get("delete-local-data"))
+        })
+    return response({})
+
 async def handle(request):
     json = await request.json()
     ws = await get_socket(request.headers.get("Authorization"))
@@ -95,6 +105,7 @@ async def handle(request):
         "session-get": session_get,
         "torrent-add": torrent_add,
         "torrent-get": torrent_get,
+        "torrent-remove": torrent_remove,
     }
     handler = handlers.get(json["method"])
     if not handler:
