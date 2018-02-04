@@ -94,6 +94,31 @@ async def torrent_remove(ws, **args):
         })
     return response({})
 
+async def torrent_set(ws, **args):
+    # TODO: no ids field means "all ids"
+    ids = [convert.get_synapse_id(i) for i in args["ids"]]
+    update = convert.from_torrent(args)
+    for torrent in ids:
+        await ws.send({
+            "type": "UPDATE_RESOURCE",
+            "resource": { "id": torrent }.update(update)
+        })
+    return response({})
+
+async def torrent_start(ws, **args):
+    # TODO: no ids field means "all ids"
+    ids = [convert.get_synapse_id(i) for i in args["ids"]]
+    for torrent in ids:
+        await ws.send({ "type": "RESUME_TORRENT", "id": torrent })
+    return response({})
+
+async def torrent_stop(ws, **args):
+    # TODO: no ids field means "all ids"
+    ids = [convert.get_synapse_id(i) for i in args["ids"]]
+    for torrent in ids:
+        await ws.send({ "type": "PAUSE_TORRENT", "id": torrent })
+    return response({})
+
 async def handle(request):
     json = await request.json()
     ws = await get_socket(request.headers.get("Authorization"))
@@ -106,6 +131,11 @@ async def handle(request):
         "torrent-add": torrent_add,
         "torrent-get": torrent_get,
         "torrent-remove": torrent_remove,
+        "torrent-set": torrent_set,
+        "torrent-start": torrent_start,
+        "torrent-start-now": torrent_start,
+        "torrent-stop": torrent_stop,
+        #"torrent-verify": torrent_verify # TODO Luminarys
     }
     handler = handlers.get(json["method"])
     if not handler:

@@ -87,13 +87,10 @@ def to_file(f):
     }
 
 def to_priority(p):
-    return {
-        1: -1,
-        2: -1,
-        3: 0,
-        4: 1,
-        5: 1,
-    }[p]
+    return { 1: -1, 2: -1, 3: 0, 4: 1, 5: 1 }[p]
+
+def from_priority(p):
+    return { -1: 1, 0: 3, 1: 5 }[p]
 
 def to_filestat(f):
     return {
@@ -266,3 +263,18 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
         if key in t:
             _t[key] = t[key]
     return _t
+
+def from_torrent(torrent):
+    sytorrent = dict()
+    if "bandwidthPriority" in torrent:
+        sytorrent["priority"] = from_priority(torrent.get("bandwidthPriority"))
+    if not torrent.get("honorSessionLimits"):
+        dl_limit = torrent.get("downloadLimit") or -1
+        sytorrent["throttle_down"] = dl_limit
+        ul_limit = torrent.get("uploadLimit") or -1
+        sytorrent["throttle_up"] = ul_limit
+    else:
+        sytorrent["throttle_up"] = None
+        sytorrent["throttle_down"] = None
+    # TODO: File priority
+    return sytorrent
