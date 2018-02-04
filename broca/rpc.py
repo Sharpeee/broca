@@ -30,6 +30,7 @@ async def torrent_get(ws, **args):
     files = (await ws.get_resources("file"))
     peers = (await ws.get_resources("peer"))
     trackers = (await ws.get_resources("tracker"))
+    torrents = sorted(torrents, key=lambda t: t.get("name"))
     return response({
         "arguments": {
             "torrents": [convert.to_torrent(

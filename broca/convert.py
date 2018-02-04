@@ -99,7 +99,7 @@ def to_filestat(f):
 
 def to_peer(p):
     return {
-        "address": p["id"],
+        "address": p["ip"],
         "clientName": p["client_id"],
         "clientIsChoked": False,
         "clientIsInterested": False,
@@ -163,6 +163,10 @@ def to_torrent(torrent, fields, files, peers, trackers):
     transferred_down = torrent["transferred_down"]
     transferred_up = torrent["transferred_up"]
     progress = torrent["progress"]
+    # We want these consistently sorted
+    files = sorted(files, key=lambda f: f.get("path"))
+    peers = sorted(peers, key=lambda p: p.get("id"))
+    trackers = sorted(trackers, key=lambda t: t.get("url"))
     t = {
         "activityDate": to_timestamp(torrent["modified"]),
         "addedDate": to_timestamp(torrent["created"]),
