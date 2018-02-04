@@ -1,4 +1,6 @@
+from datetime import datetime
 from urllib.parse import quote
+from uuid import uuid4
 import asyncio
 import base64
 import json
@@ -9,9 +11,12 @@ synapse_pool = dict()
 
 class Connection():
     def __init__(self, ws):
+        self.uuid = uuid4()
         self.ws = ws
         self.serial = 1
+        self.future = None
         self.futures = dict()
+        self.last_update = datetime.utcnow()
 
     async def get_extant(self, kind):
         serial = await self.send({
@@ -42,7 +47,6 @@ class Connection():
             "serial": serial
         })
         self.serial += 1
-        print("=> ", msg)
         await self.ws.send(json.dumps(msg))
         return serial
 
@@ -56,7 +60,6 @@ class Connection():
 
     async def recv(self):
         msg = json.loads(await self.ws.recv())
-        print("<= ", msg)
         for _kwargs in list(self.futures.keys()):
             kwargs = json.loads(_kwargs)
             for k in kwargs:
@@ -110,5 +113,8 @@ async def get_socket(auth):
             print(ex)
             return None
         socket = Connection(ws)
-        asyncio.ensure_future(socket.run())
+        synapse_pool[uri] = socket
+        socket.future = socket.run()
+        print(f"Established connection {socket.uuid} to {uri}")
+        asyncio.ensure_future(socket.future)
     return socket
