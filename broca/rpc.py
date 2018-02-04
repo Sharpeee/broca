@@ -118,6 +118,12 @@ async def torrent_stop(ws, **args):
         await ws.send({ "type": "PAUSE_TORRENT", "id": torrent })
     return response({})
 
+async def torrent_verify(ws, **args):
+    # TODO: no ids field means "all ids"
+    ids = [convert.get_synapse_id(i) for i in args["ids"]]
+    serial = await ws.send({ "type": "VALIDATE_RESOURCES", "ids": ids })
+    return response({})
+
 async def handle(request):
     req = await request.json()
     if not request.headers.get("Authorization"):
@@ -142,7 +148,7 @@ async def handle(request):
         "torrent-start": torrent_start,
         "torrent-start-now": torrent_start,
         "torrent-stop": torrent_stop,
-        #"torrent-verify": torrent_verify # TODO Luminarys
+        "torrent-verify": torrent_verify
     }
     handler = handlers.get(req["method"])
     if not handler:

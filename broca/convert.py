@@ -124,7 +124,7 @@ def to_tracker(t):
         "announce": t["url"],
         "id": get_transmission_id(t["id"]),
         "scrape": "",
-        "tier": 1, # TODO Luminarys
+        "tier": 1,
     }
 
 def to_trackerstat(t):
@@ -160,8 +160,8 @@ def to_trackerstat(t):
 
 def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
     size = torrent.get("size") or 0
-    throttle_down = torrent.get("throttle_down") or 0
-    throttle_up = torrent.get("throttle_up") or 0
+    throttle_down = torrent.get("throttle_down")
+    throttle_up = torrent.get("throttle_up")
     transferred_down = torrent.get("transferred_down") or 0
     transferred_up = torrent.get("transferred_up") or 0
     progress = torrent.get("progress") or 0
