@@ -1,10 +1,8 @@
-This is a proxy server that translates Synapse[0] RPC into Transmission[1] RPC.
+# Broca
 
-[0] https://synapse-bt.org/
-[1] https://transmissionbt.com/
+This is a proxy server that translates [Synapse](https://synapse-bt.org) RPC
+into [Transmission](https://transmissionbt.com/) RPC.
 
 To use it, run the daemon and point your Transmission client at it. Set the
 username to your desired Synapse RPC URI (e.g. ws://localhost:8412) and the
 password to your Synapse RPC password, and the host to http://localhost:9091.
-
-https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt
