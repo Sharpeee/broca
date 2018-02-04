@@ -84,6 +84,8 @@ class Connection():
             try:
                 await self.recv()
             except:
+                if self.uri in synapse_pool:
+                    del synapse_pool[self.uri]
                 return
 
 def get_connection_details(auth):
