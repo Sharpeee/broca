@@ -164,8 +164,8 @@ def to_torrent(torrent, fields, files, peers, trackers):
     transferred_up = torrent["transferred_up"]
     progress = torrent["progress"]
     t = {
-        "activityDate": 0,
-        "addedDate": 0,
+        "activityDate": to_timestamp(torrent["modified"]),
+        "addedDate": to_timestamp(torrent["created"]),
         "bandwidthPriority": to_priority(torrent["priority"]),
         "comment": "broca TODO: fill out comment", # TODO Luminarys
         "corruptEver": 0,
@@ -179,8 +179,8 @@ def to_torrent(torrent, fields, files, peers, trackers):
         "downloadLimited": throttle_down not in [None, -1],
         "error": torrent["error"] is not None,
         "errorString": torrent["error"] or "",
-        "eta": 0, # TODO
-        "etaIdle": 0,
+        "eta": (size * (1 - progress)) * torrent["rate_up"],
+        "etaIdle": (size * (1 - progress)) * torrent["rate_up"],
         "files": [to_file(f) for f in files],
         "fileStats": [to_filestat(f) for f in files],
         "hashString": torrent["id"],
@@ -209,8 +209,8 @@ def to_torrent(torrent, fields, files, peers, trackers):
             "fromPex": 0,
             "fromTracker": 0,
         },
-        "peersGettingFromUs": 0, # TODO
-        "peersSendingToUs": 0, # TODO
+        "peersGettingFromUs": sum(p for p in peers if p["rate_up"] != 0),
+        "peersSendingToUs": sum(p for p in peers if p["rate_down"] != 0),
         "percentDone": progress,
         "pieces": "",
         "pieceCount": torrent["pieces"] or 0,
