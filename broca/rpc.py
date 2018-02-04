@@ -1,6 +1,9 @@
 from aiohttp import web
 from broca.connection import get_socket
+from urllib.parse import urlparse, urlunparse
+import aiohttp
 import asyncio
+import base64
 import broca.convert as convert
 import json
 
@@ -15,10 +18,48 @@ def response(_json, result="success", tag=None):
             content_type="application/json")
 
 async def session_get(ws, **args):
-    server = (await ws.get_resources("server"))[0]
+    server = (await ws.get_resources_by_kind("server"))[0]
     return response({
         "arguments": convert.to_session(server)
     })
+
+async def upload_torrent(ws, **args):
+    data = base64.b64decode(args["metainfo"])
+    msg = {
+        "type": "UPLOAD_TORRENT",
+        "size": len(data),
+    }
+    if args["download-dir"]:
+        msg["path"] = args["download-dir"]
+    if args["paused"]:
+        msg["start"] = not args["paused"]
+    serial = await ws.send(msg)
+    async for offer in ws.expect(1, serial=serial):
+        break
+    uri = urlparse(ws.uri)
+    if uri.scheme == "wss":
+        uri = uri._replace(scheme="https")
+    elif uri.scheme == "ws":
+        uri = uri._replace(scheme="http")
+    async with aiohttp.ClientSession() as session: 
+        async with session.request("POST", urlunparse(uri),
+                headers={ "Authorization": f"Bearer {offer['token']}" },
+                data=data) as resp:
+            if resp.status != 204:
+                return response({}, result=f"Synapse returned {resp.status}")
+    async for extant in ws.expect(1, type="RESOURCES_EXTANT", serial=serial):
+        break
+    torrent = (await ws.get_resources(extant["ids"]))[0]
+    return response({
+        "torrent-added": convert.to_torrent(torrent)
+    })
+
+async def torrent_add(ws, **args):
+    if "metainfo" in args:
+        return await upload_torrent(ws, **args)
+    if "filename" in args:
+        pass # TODO: magnet links
+    return response({}, result="Invalid torrent-add request")
 
 async def torrent_get(ws, **args):
     if "ids" in args:
@@ -26,10 +67,10 @@ async def torrent_get(ws, **args):
         # TODO: Support recently active (probably by faking it)
         pass
     fields = args.get("fields")
-    torrents = (await ws.get_resources("torrent"))
-    files = (await ws.get_resources("file"))
-    peers = (await ws.get_resources("peer"))
-    trackers = (await ws.get_resources("tracker"))
+    torrents = (await ws.get_resources_by_kind("torrent"))
+    files = (await ws.get_resources_by_kind("file"))
+    peers = (await ws.get_resources_by_kind("peer"))
+    trackers = (await ws.get_resources_by_kind("tracker"))
     torrents = sorted(torrents, key=lambda t: t.get("name"))
     return response({
         "arguments": {
@@ -52,6 +93,7 @@ async def handle(request):
                     "username=ws[s]://websocket-uri and password=synapse password")
     handlers = {
         "session-get": session_get,
+        "torrent-add": torrent_add,
         "torrent-get": torrent_get,
     }
     handler = handlers.get(json["method"])

@@ -156,8 +156,8 @@ def to_trackerstat(t):
         "tier": 1,
     }
 
-def to_torrent(torrent, fields, files, peers, trackers):
-    size = torrent["size"] or 0
+def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
+    size = torrent.get("size") or 0
     throttle_down = torrent["throttle_down"]
     throttle_up = torrent["throttle_up"]
     transferred_down = torrent["transferred_down"]
@@ -213,8 +213,8 @@ def to_torrent(torrent, fields, files, peers, trackers):
             "fromPex": 0,
             "fromTracker": 0,
         },
-        "peersGettingFromUs": sum(p for p in peers if p["rate_up"] != 0),
-        "peersSendingToUs": sum(p for p in peers if p["rate_down"] != 0),
+        "peersGettingFromUs": sum(1 for p in peers if p["rate_up"] != 0),
+        "peersSendingToUs": sum(1 for p in peers if p["rate_down"] != 0),
         "percentDone": progress,
         "pieces": "",
         "pieceCount": torrent["pieces"] or 0,
@@ -254,6 +254,8 @@ def to_torrent(torrent, fields, files, peers, trackers):
         "webseeds": [],
         "webseedsSendingToUs": 0,
     }
+    if fields is None:
+        return t
     _t = {}
     for key in fields:
         if key in t:

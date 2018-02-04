@@ -10,9 +10,10 @@ import websockets
 synapse_pool = dict()
 
 class Connection():
-    def __init__(self, ws):
+    def __init__(self, uri, ws):
         self.uuid = uuid4()
         self.ws = ws
+        self.uri = uri
         self.serial = 1
         self.future = None
         self.futures = dict()
@@ -25,14 +26,13 @@ class Connection():
         })
         async for resources in self.expect(1, serial=serial):
             break
-        await self.send({
-            "type": "FILTER_UNSUBSCRIBE",
-            "filter_serial": serial
-        })
         return resources
 
-    async def get_resources(self, kind):
+    async def get_resources_by_kind(self, kind):
         ids = (await self.get_extant(kind))["ids"]
+        return await self.get_resources(ids)
+
+    async def get_resources(self, ids):
         serial = await self.send({
             "type": "GET_RESOURCES",
             "ids": ids
@@ -112,7 +112,7 @@ async def get_socket(auth):
         except Exception as ex:
             print(ex)
             return None
-        socket = Connection(ws)
+        socket = Connection(uri, ws)
         synapse_pool[uri] = socket
         socket.future = socket.run()
         print(f"Established connection {socket.uuid} to {uri}")
