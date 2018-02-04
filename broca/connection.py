@@ -72,7 +72,7 @@ class Connection():
         while True:
             try:
                 await self.recv()
-            except asyncio.CancelledError:
+            except:
                 return
 
 def get_connection_details(auth):

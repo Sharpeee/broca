@@ -11,5 +11,5 @@ async def reaper():
             conn = synapse_pool[uri]
             if conn.last_update < cutoff:
                 print(f"Reaping {conn.uuid}")
-                conn.future.cancel()
+                conn.ws.close()
                 del synapse_pool[uri]
