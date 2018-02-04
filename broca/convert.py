@@ -238,7 +238,7 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
             "paused": 0,
             "pending": 5,
             "leeching": 4,
-            "idle": 3,
+            "idle": 0,
             "seeding": 6,
             "hashing": 2,
             "magnet": 4,

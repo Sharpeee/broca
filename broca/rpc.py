@@ -120,7 +120,6 @@ async def torrent_stop(ws, **args):
 
 async def handle(request):
     req = await request.json()
-    print("<-", req)
     if not request.headers.get("Authorization"):
         return web.Response(status=401, headers={
             "WWW-Authenticate": 'Basic realm="User Visible Realm" charset="UTF-8"'
@@ -152,7 +151,6 @@ async def handle(request):
     tag = req.get("tag")
     if tag is not None:
         resp["tag"] = tag
-    print("->", json.dumps(resp))
     return web.Response(
             text=json.dumps(resp),
             content_type="application/json")
