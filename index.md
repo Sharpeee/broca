@@ -14,7 +14,10 @@ password to your Synapse RPC password, and the host to http://localhost:9091.
 ## Transmission clients known to work
 
 - transmission-remote-gtk
+- transgui
 - Gear Shift
+- tremc
+- Transdroid
 
 ## Releases
 
