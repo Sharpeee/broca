@@ -61,6 +61,29 @@ def to_session(server):
         "version": f"2.93 (Synapse {server['id']})"
     }
 
+def to_sessionstats(server, torrents):
+    return {
+        "activeTorrentCount": len([t for t in torrents if t["status"] in ["leeching", "seeding"]]),
+        "downloadSpeed": server["rate_up"],
+        "pausedTorrentCount": len([t for t in torrents if t["status"] not in ["leeching", "seeding"]]),
+        "torrentCount": len(torrents),
+        "uploadSpeed": server["rate_down"],
+        "cumulative-stats": {
+            "uploadedBytes": server["transferred_up"],
+            "downloadedBytes": server["transferred_down"],
+            "filesAdded": 0,
+            "sessionCount": 1,
+            "secondsActive": 1, # TODO
+        },
+        "current-stats": {
+            "uploadedBytes": server["ses_transferred_up"],
+            "downloadedBytes": server["ses_transferred_down"],
+            "filesAdded": 0,
+            "sessionCount": 1,
+            "secondsActive": 1, # TODO
+        }
+    }
+
 def to_timestamp(synapse):
     return int(iso8601.parse_date(synapse).timestamp())
 

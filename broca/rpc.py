@@ -19,6 +19,13 @@ async def session_get(ws, **args):
         "arguments": convert.to_session(server)
     })
 
+async def session_stats(ws, **args):
+    server = (await ws.get_resources_by_kind("server"))[0]
+    torrents = (await ws.get_resources_by_kind("torrent"))
+    return response({
+        "arguments": convert.to_sessionstats(server, torrents)
+    })
+
 async def upload_torrent(ws, **args):
     data = base64.b64decode(args["metainfo"])
     msg = {
@@ -137,6 +144,7 @@ async def handle(request):
                     "username=ws[s]://websocket-uri and password=synapse password")
     handlers = {
         "session-get": session_get,
+        "session-stats": session_stats,
         "torrent-add": torrent_add,
         "torrent-get": torrent_get,
         "torrent-remove": torrent_remove,
@@ -150,7 +158,11 @@ async def handle(request):
     if not handler:
         resp = response({}, result=f"Unknown method {req['method']}")
     else:
-        resp = await handler(ws, **(req.get("arguments") or {}))
+        args = req.get("arguments")
+        if not isinstance(args, dict):
+            # tremc does this, wtf
+            args = {}
+        resp = await handler(ws, **args)
     tag = req.get("tag")
     if tag is not None:
         resp["tag"] = tag
