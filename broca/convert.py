@@ -249,7 +249,7 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
         "queuePosition": 0,
         "rateDownload": torrent["rate_down"],
         "rateUpload": torrent["rate_up"],
-        "recheckProgress": 0,
+        "recheckProgress": torrent["progress"] if torrent["status"] == "hashing" else 1,
         "secondsDownloading": 0,
         "secondsSeeding": 0,
         "seedIdleLimit": 0,
