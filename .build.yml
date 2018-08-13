@@ -1,0 +1,22 @@
+image: debian/stretch
+packages:
+  - rsync
+  - ruby
+  - ruby-dev
+  - zlib1g-dev
+sources:
+  - https://git.sr.ht/~sircmpwn/broca
+environment:
+  deploy: synapse@synapse-bt.org
+secrets:
+  - 7ebab768-e5e4-4c9d-ba57-ec41a72c5665
+tasks:
+  - setup: |
+      sudo gem install github-pages
+  - build: |
+      cd broca
+      jekyll build
+  - deploy: |
+      cd broca
+      sshopts="-o StrictHostKeyChecking=no"
+      rsync --rsh="ssh $sshopts" -rP _site/ ${deploy}:/var/www/broca.synapse-bt.org/
