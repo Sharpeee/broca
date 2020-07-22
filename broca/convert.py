@@ -197,9 +197,9 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
         "addedDate": to_timestamp(torrent["created"]),
         "announceUrl": trackers[0]["url"] if trackers else "",
         "bandwidthPriority": to_priority(torrent["priority"]),
-        "comment": "broca TODO: fill out comment", # TODO Luminarys
+        "comment": torrent["comment"],
         "corruptEver": 0,
-        "creator": "TODO", # TODO Luminarys
+        "creator": torrent["creator"],
         "dateCreated": to_timestamp(torrent["created"]),
         "desiredAvailable": 0,
         "doneDate": to_timestamp(torrent["created"]),
@@ -219,7 +219,7 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
         "honorsSessionLimits": throttle_up is not None and throttle_down is not None,
         "id": get_transmission_id(torrent["id"]),
         "isFinished": progress == 1,
-        "isPrivate": False, # TODO Luminarys
+        "isPrivate": torrent["private"],
         "isStalled": False,
         "leftUntilDone": 0,
         "magnetLink": "", # TODO Luminarys
@@ -242,7 +242,7 @@ def to_torrent(torrent, fields=None, files=[], peers=[], trackers=[]):
         "peersGettingFromUs": sum(1 for p in peers if p["rate_up"] != 0),
         "peersSendingToUs": sum(1 for p in peers if p["rate_down"] != 0),
         "percentDone": progress,
-        "pieces": "",
+        "pieces": torrent["piece_field"],
         "pieceCount": torrent["pieces"] or 0,
         "pieceSize": torrent["piece_size"] or 0,
         "priorities": [to_priority(f["priority"]) for f in files],
